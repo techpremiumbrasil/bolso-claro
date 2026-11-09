@@ -1446,5 +1446,73 @@ if (window.claude && claude.use) {
 })();
 </script>
 
+<style>
+#inst{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));pointer-events:none}
+#inst .box{pointer-events:auto;max-width:520px;margin:0 auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.28);padding:18px;display:flex;flex-direction:column;gap:12px;animation:instUp .3s ease-out}
+@keyframes instUp{from{transform:translateY(30px);opacity:0}}
+#inst .hd{display:flex;align-items:center;gap:12px}
+#inst .ic{width:52px;height:52px;border-radius:14px;flex:none}
+#inst h3{font-size:1.05rem;margin:0}
+#inst p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+#inst ol{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+#inst li{display:flex;align-items:center;gap:10px;font-size:.92rem}#inst li>span:last-child{flex:1;min-width:0}
+#inst li .n{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:.8rem;flex:none}
+#inst li svg{width:22px;height:22px;vertical-align:-5px;color:var(--accent)}
+#inst .row2{display:flex;gap:8px;flex-wrap:wrap}
+#inst .big{flex:1;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:1rem;padding:14px;border-radius:14px}
+#inst .later{border:0;background:none;color:var(--muted);font-weight:600;padding:10px}
+#inst .arrow{text-align:center;font-size:30px;color:var(--accent);animation:instBob 1.1s ease-in-out infinite;line-height:1}
+@keyframes instBob{50%{transform:translateY(6px)}}
+#instFab{position:fixed;right:max(14px,env(safe-area-inset-right,0px));top:calc(70px + env(safe-area-inset-top,0px));z-index:9;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.8rem;padding:8px 12px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+@media (prefers-reduced-motion: reduce){#inst .box,#inst .arrow{animation:none}}
+</style>
+<div id="inst" hidden></div>
+<button id="instFab" hidden>Instalar app</button>
+<script>
+(()=>{
+  const ua=navigator.userAgent;
+  const standalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  if(standalone()) return;
+  const iOS=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  const android=/Android/.test(ua);
+  const inApp=/FBAN|FBAV|Instagram|WhatsApp|Line\/|TikTok|Snapchat|; wv\)/.test(ua);
+  const iosSafari=iOS&&/Safari/.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua)&&!inApp;
+  let deferred=null;
+  const box=document.getElementById("inst"), fab=document.getElementById("instFab");
+  const get=k=>{try{return localStorage.getItem(k)}catch{return null}}, set=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
+  const share='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 11v9h14v-9"/></svg>';
+  const plus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+  const head=(t,sub)=>`<div class="hd"><img class="ic" src="icon-192.png" alt=""><div><h3>${t}</h3><p>${sub}</p></div></div>`;
+  function html(){
+    if(inApp) return head("Abra no navegador para instalar","Dentro do WhatsApp ou do Instagram não dá para instalar.")+
+      `<ol><li><span class="n">1</span><span>Toque em <b>${iOS?"Copiar link":"Copiar link"}</b> aqui embaixo</span></li><li><span class="n">2</span><span>Abra o <b>${iOS?"Safari":"Chrome"}</b> e cole o link na barra de endereço</span></li><li><span class="n">3</span><span>Siga o passo de instalar que vai aparecer</span></li></ol>
+      <div class="row2"><button class="big" data-a="copy">Copiar link</button><button class="later" data-a="later">Agora não</button></div>`;
+    if(iosSafari) return head("Instale o Bolso Claro","Fica na tela inicial como um aplicativo. Leva 10 segundos.")+
+      `<ol><li><span class="n">1</span><span>Toque em ${share} <b>Compartilhar</b>, na barra do Safari</span></li><li><span class="n">2</span><span>Role e toque em ${plus} <b>Adicionar à Tela de Início</b></span></li><li><span class="n">3</span><span>Toque em <b>Adicionar</b>, no canto de cima</span></li></ol>
+      <div class="arrow" aria-hidden="true">↓</div><div class="row2"><button class="later" data-a="later" style="margin:0 auto">Entendi</button></div>`;
+    if(iOS) return head("Abra no Safari para instalar","No iPhone, a instalação é feita pelo Safari.")+
+      `<ol><li><span class="n">1</span><span>Toque em <b>Copiar link</b></span></li><li><span class="n">2</span><span>Abra o <b>Safari</b> e cole o link</span></li><li><span class="n">3</span><span>Toque em Compartilhar → <b>Adicionar à Tela de Início</b></span></li></ol>
+      <div class="row2"><button class="big" data-a="copy">Copiar link</button><button class="later" data-a="later">Agora não</button></div>`;
+    if(deferred) return head("Instale o Bolso Claro","Fica na tela inicial como um aplicativo, e abre mesmo sem internet.")+
+      `<div class="row2"><button class="big" data-a="install">Instalar aplicativo</button><button class="later" data-a="later">Agora não</button></div>`;
+    return head("Instale o Bolso Claro","Fica na tela inicial como um aplicativo.")+
+      `<ol><li><span class="n">1</span><span>Toque no menu <b>⋮</b> do navegador, no canto de cima</span></li><li><span class="n">2</span><span>Toque em <b>Instalar aplicativo</b> ou <b>Adicionar à tela inicial</b></span></li><li><span class="n">3</span><span>Confirme em <b>Instalar</b></span></li></ol>
+      <div class="row2"><button class="later" data-a="later" style="margin:0 auto">Entendi</button></div>`;
+  }
+  function show(){ box.innerHTML=`<div class="box" role="dialog" aria-label="Instalar o Bolso Claro">${html()}</div>`; box.hidden=false; fab.hidden=true; }
+  function hide(){ box.hidden=true; fab.hidden=false; }
+  box.addEventListener("click",async e=>{const b=e.target.closest("button"); if(!b) return; const a=b.dataset.a;
+    if(a==="later"){ set("bolso.inst.later",String(Date.now())); hide(); }
+    if(a==="copy"){ const url=location.href.split("#")[0]; try{await navigator.clipboard.writeText(url); b.textContent="Link copiado ✓";}catch{ b.textContent=url; } }
+    if(a==="install"&&deferred){ deferred.prompt(); const r=await deferred.userChoice.catch(()=>null); deferred=null; if(r&&r.outcome==="accepted") box.hidden=true, fab.hidden=true; else hide(); }
+  });
+  fab.addEventListener("click",show);
+  window.addEventListener("beforeinstallprompt",e=>{e.preventDefault(); deferred=e; if(!box.hidden) show();});
+  window.addEventListener("appinstalled",()=>{box.hidden=true; fab.hidden=true;});
+  const later=+get("bolso.inst.later")||0, recent=Date.now()-later<3*864e5;
+  setTimeout(()=>{ if(standalone()) return; if(recent) fab.hidden=false; else show(); }, 1800);
+})();
+</script>
+
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
 </body></html>
